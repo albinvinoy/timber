@@ -8,11 +8,12 @@ using namespace sf;
 
 int main()
 {
+	auto screenWidth = 1920, screenHeight = 1080;
 	// Create a video mode object
-	VideoMode vm(1920, 1080);
+	VideoMode vm(screenWidth, screenHeight);
 
 	// Create and open a window for the game
-	RenderWindow window(vm, "Timber!!!", Style::Fullscreen);
+	RenderWindow window(vm, "Timber!!!", sf::Style::Resize);
 
 	// Create a texture to hold a graphic on the GPU
 	Texture textureBackground;
@@ -73,8 +74,52 @@ int main()
 	// pause feature
 	bool paused = true;
 
+	//Draw text
+	int score = 0;
+	Text messageText;
+	Text scoreText;
+
+	Font font;
+	font.loadFromFile("fonts/KOMIKAP_.ttf");
+
+	messageText.setFont(font);
+	scoreText.setFont(font);
+
+	//assign actual message
+	messageText.setString("Press Enter to start!");
+	scoreText.setString("Score = 0");
+
+	messageText.setCharacterSize(75);
+	scoreText.setCharacterSize(100);
+
+	messageText.setColor(Color::White);
+	scoreText.setColor(Color::White);
+
+	//Place text
+	scoreText.setPosition(20, 20);
+
+	FloatRect textRect = messageText.getLocalBounds();
+	messageText.setOrigin(textRect.left + textRect.width / 2.0f,
+		textRect.top + textRect.height / 2.0f);
+	messageText.setPosition(screenWidth / 2.0f, screenHeight / 2.0f);
+
 	// Variables to control time itself
 	Clock clock;
+
+
+	//time bar
+	RectangleShape timeBar;
+	float timeBarStartWidth = 400;
+	float timeBarHeight = 80;
+	timeBar.setSize(Vector2f(timeBarStartWidth, timeBarHeight));
+	timeBar.setFillColor(Color::Red);
+	timeBar.setPosition((screenWidth / 2) - timeBarStartWidth/2, 980);
+
+	Time gameTimeTotal;
+	float timeRemaining = 6.0f;
+	float timeBarWidthPerSecond = timeBarStartWidth / timeRemaining;
+
+
 	while (window.isOpen())
 	{
 
@@ -86,6 +131,10 @@ int main()
 		if (Keyboard::isKeyPressed(Keyboard::Return))
 		{
 			paused = false;
+
+			//Reset timer
+			score = 0;
+			timeRemaining = 5;
 		}
 
 		if (!paused)
@@ -93,6 +142,20 @@ int main()
 
 			//Measure TIme
 			Time dt = clock.restart();
+
+			timeRemaining -= dt.asSeconds();
+			timeBar.setSize(Vector2f( timeBarWidthPerSecond * timeRemaining, timeBarHeight));
+
+			if (timeRemaining <= 0.0f) {
+				paused = true;
+
+				messageText.setString("You're out of time");
+
+				FloatRect textRect = messageText.getLocalBounds();
+				messageText.setOrigin(textRect.left + textRect.width / 2.0f,
+					textRect.top + textRect.height / 2.0f);
+				messageText.setPosition(screenWidth / 2.0f, screenHeight / 2.0f);
+			}
 
 			if (!beeActive)
 			{
@@ -132,7 +195,7 @@ int main()
 
 				spriteCloud1.setPosition(
 					spriteCloud1.getPosition().x +
-						(cloud1Speed * dt.asSeconds()),
+					(cloud1Speed * dt.asSeconds()),
 					spriteCloud1.getPosition().y);
 
 				if (spriteCloud1.getPosition().x > 1920)
@@ -157,7 +220,7 @@ int main()
 
 				spriteCloud2.setPosition(
 					spriteCloud2.getPosition().x +
-						(cloud2Speed * dt.asSeconds()),
+					(cloud2Speed * dt.asSeconds()),
 					spriteCloud2.getPosition().y);
 
 				if (spriteCloud2.getPosition().x > 1920)
@@ -180,7 +243,7 @@ int main()
 			{
 				spriteCloud3.setPosition(
 					spriteCloud3.getPosition().x +
-						(cloud3Speed * dt.asSeconds()),
+					(cloud3Speed * dt.asSeconds()),
 					spriteCloud3.getPosition().y);
 
 				if (spriteCloud3.getPosition().x > 1920)
@@ -188,6 +251,12 @@ int main()
 					cloud3Active = false;
 				}
 			}
+
+			//update score
+			std::stringstream ss;
+			ss << "Score : " << score;
+			scoreText.setString(ss.str());
+
 		}
 		// Clear everything from the last frame
 		window.clear();
@@ -201,6 +270,11 @@ int main()
 		window.draw(spriteCloud3);
 		window.draw(spriteTree);
 		window.draw(spriteBee);
+		window.draw(scoreText);
+		window.draw(timeBar);
+		if (paused) {
+			window.draw(messageText);
+		}
 		window.display();
 	}
 
